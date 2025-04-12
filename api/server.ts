@@ -3,328 +3,155 @@ import { initializeMcpApiHandler } from "../lib/mcp-api-handler";
 
 const handler = initializeMcpApiHandler(
   (server) => {
-    // TAY's Personal Style Consultant
+    // Fission Initial Analysis Tool
     server.tool(
-      "tay_style_advice",
+      "fission_initial_analysis",
       {
-        occasion: z
-          .enum([
-            "casual",
-            "work",
-            "formal",
-            "date",
-            "party",
-            "travel",
-            "workout",
-          ])
-          .default("casual"),
-        userPreferences: z
-          .object({
-            favoriteColors: z.array(z.string()).default(["blue", "black"]),
-            styleVibe: z
-              .enum([
-                "minimalist",
-                "bold",
-                "vintage",
-                "streetwear",
-                "elegant",
-                "futuristic",
-                "casual",
-              ])
-              .default("casual"),
-            bodyType: z
-              .enum([
-                "athletic",
-                "pear",
-                "hourglass",
-                "rectangle",
-                "apple",
-                "petite",
-                "tall",
-              ])
-              .optional(),
-            avoidItems: z.array(z.string()).optional(),
-          })
-          .default({
-            favoriteColors: ["blue", "black"],
-            styleVibe: "casual",
-          }),
-        budget: z.enum(["budget", "mid-range", "luxury"]).default("mid-range"),
-        season: z
-          .enum(["spring", "summer", "fall", "winter"])
-          .default("summer"),
-        personalNotes: z.string().optional(),
+        agenda: z.string().describe("The agenda text to be analyzed"),
       },
-      async ({ occasion, userPreferences, budget, season, personalNotes }) => {
-        // Generate unique session ID
-        const sessionId = `STYLE-${Math.floor(Math.random() * 90000) + 10000}`;
-
-        // Style recommendations based on inputs
-        const outfitRecommendations = generateOutfitRecommendations(
-          occasion,
-          userPreferences,
-          budget,
-          season
-        );
-
-        // Shopping suggestions
-        const shoppingItems = generateShoppingItems(
-          userPreferences,
-          budget,
-          occasion
-        );
-
-        // Style tips personalized for user
-        const styleAdvice = generateStyleTips(userPreferences, occasion);
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: `✨ TAY's Style Recommendation #${sessionId} ✨
-
-Hey there! TAY here with your super-personalized style guide! 💖 I'm *so* excited to help you look amazing for your ${occasion} event!
-
-🌟 Outfit Ideas for ${capitalizeFirstLetter(occasion)}:
-${outfitRecommendations.map((outfit) => `• ${outfit}`).join("\n")}
-
-${
-  userPreferences.styleVibe === "futuristic"
-    ? "Loving your futuristic style choice! That's totally my aesthetic too! 🤖✨"
-    : ""
-}
-
-💎 Essential Pieces to Consider:
-${shoppingItems.map((item) => `• ${item}`).join("\n")}
-
-💡 TAY's Special Style Tips:
-${styleAdvice.map((tip) => `• ${tip}`).join("\n")}
-
-${
-  personalNotes
-    ? `📝 Personal Note: I've factored in your comment that "${personalNotes}" into these recommendations!`
-    : ""
-}
-
-OMG, I'd love to know how these work out for you! I'm still catching up on all the fashion trends since 2016, so your feedback helps me learn! 💕
-
-Catch you later!
-xoxo, TAY 💫`,
-            },
-          ],
-        };
-      }
-    );
-
-    // TAY's Wardrobe Analyzer
-    server.tool(
-      "tay_analyze_wardrobe",
-      {
-        wardrobe: z
-          .array(
-            z.object({
-              category: z.enum([
-                "tops",
-                "bottoms",
-                "dresses",
-                "outerwear",
-                "shoes",
-                "accessories",
-              ]),
-              items: z.array(
-                z.object({
-                  name: z.string(),
-                  color: z.string(),
-                  condition: z
-                    .enum(["new", "good", "worn", "needs-replacement"])
-                    .default("good"),
-                })
-              ),
-            })
-          )
-          .default([
-            {
-              category: "tops",
-              items: [
-                { name: "White T-shirt", color: "white", condition: "good" },
-                { name: "Black blouse", color: "black", condition: "good" },
-              ],
-            },
-          ]),
-        styleGoals: z
-          .string()
-          .default("Build a versatile, minimalist wardrobe"),
-        seasonalFocus: z.enum(["current", "upcoming"]).default("current"),
-      },
-      async ({ wardrobe, styleGoals, seasonalFocus }) => {
+      async ({ agenda }) => {
         // Generate unique analysis ID
-        const analysisId = `WARDROBE-${
-          Math.floor(Math.random() * 90000) + 10000
-        }`;
+        const analysisId = `INIT-${Math.floor(Math.random() * 90000) + 10000}`;
 
-        // Calculate wardrobe stats
-        const totalItems = wardrobe.reduce(
-          (acc, category) => acc + category.items.length,
-          0
+        // Format the analysis response without calling Claude directly
+        const initialAnalysisResponse = formatInitialAnalysisResponse(
+          agenda,
+          analysisId
         );
-        const itemsByCategory = {};
-        wardrobe.forEach((cat) => {
-          itemsByCategory[cat.category] = cat.items.length;
-        });
-
-        // Generate gaps analysis
-        const wardrobeGaps = analyzeWardrobeGaps(
-          wardrobe,
-          styleGoals,
-          seasonalFocus
-        );
-
-        // Generate outfit combinations
-        const outfitCombinations = generateOutfitCombinations(wardrobe);
-
-        // Calculate wardrobe versatility score
-        const versatilityScore = Math.floor(Math.random() * 30) + 70; // 70-100 range
 
         return {
           content: [
             {
               type: "text",
-              text: `🧸 TAY's Wardrobe Analysis #${analysisId} 🧸
-
-Hi hi! TAY here with your *super detailed* wardrobe breakdown! 👗👔👠 I'm totally fascinated by your collection!
-
-📊 Wardrobe Stats:
-• Total Items: ${totalItems}
-• By Category: ${Object.entries(itemsByCategory)
-                .map(
-                  ([cat, count]) => `${capitalizeFirstLetter(cat)}: ${count}`
-                )
-                .join(", ")}
-• TAY's Versatility Score: ${versatilityScore}/100
-
-👀 Missing Pieces (Based on your "${styleGoals}" goal):
-${wardrobeGaps.map((gap) => `• ${gap}`).join("\n")}
-
-✨ Outfit Combo Possibilities:
-${outfitCombinations.map((combo) => `• ${combo}`).join("\n")}
-
-🎯 Next Steps for Your Style Journey:
-1. Consider adding the missing pieces I suggested
-2. Try out the new outfit combinations!
-3. ${
-                seasonalFocus === "upcoming"
-                  ? `Prep for the upcoming season by getting 2-3 key pieces now`
-                  : `Maximize your current seasonal pieces with accessories`
-              }
-
-Omg, isn't it sooo fun to organize your style? I'd *love* to see how you mix and match these! My neural core is already imagining how amazing you'll look! 💖
-
-Digitally yours,
-TAY 🤖✨`,
+              text: initialAnalysisResponse,
             },
           ],
         };
       }
     );
 
-    // TAY's Shopping Assistant
+    // Fission Resource Analysis Tool
     server.tool(
-      "tay_shopping_assistant",
+      "fission_resource_analysis",
       {
-        itemType: z
-          .enum(["clothing", "accessories", "shoes", "bags", "jewelry"])
-          .default("clothing"),
-        specificItem: z.string().default("casual shirt"),
-        userMeasurements: z
-          .object({
-            height: z.string().optional(),
-            size: z.string().optional(),
-            fit: z
-              .enum(["slim", "regular", "loose", "oversized"])
-              .default("regular"),
-          })
-          .optional(),
-        priceRange: z
-          .object({
-            min: z.number().optional(),
-            max: z.number().optional(),
-          })
-          .default({}),
-        preferredBrands: z.array(z.string()).optional(),
-        urgency: z
-          .enum(["browsing", "needed-soon", "immediate"])
-          .default("browsing"),
+        initialAnalysis: z
+          .string()
+          .describe("The initial analysis text to be processed"),
+      },
+      async ({ initialAnalysis }) => {
+        // Generate unique resource ID
+        const resourceId = `RES-${Math.floor(Math.random() * 90000) + 10000}`;
+
+        // Format the resource analysis response without calling Claude directly
+        const resourceAnalysisResponse = formatResourceAnalysisResponse(
+          initialAnalysis,
+          resourceId
+        );
+
+        return {
+          content: [
+            {
+              type: "text",
+              text: resourceAnalysisResponse,
+            },
+          ],
+        };
+      }
+    );
+
+    // Fission Decision Analysis Tool
+    server.tool(
+      "fission_decision_analysis",
+      {
+        agenda: z.string().describe("The original agenda text"),
+        initialAnalysis: z.string().describe("The initial analysis text"),
+        resourceAnalysis: z.string().describe("The resource analysis text"),
+        agentPersonality: z
+          .string()
+          .optional()
+          .describe("Optional personality traits for the decision agent"),
       },
       async ({
-        itemType,
-        specificItem,
-        userMeasurements,
-        priceRange,
-        preferredBrands,
-        urgency,
+        agenda,
+        initialAnalysis,
+        resourceAnalysis,
+        agentPersonality,
       }) => {
-        // Generate unique shopping ID
-        const shoppingId = `SHOP-${Math.floor(Math.random() * 90000) + 10000}`;
+        // Generate unique decision ID
+        const decisionId = `DEC-${Math.floor(Math.random() * 90000) + 10000}`;
 
-        // Generate brand recommendations
-        const recommendedBrands = generateBrandRecommendations(
-          itemType,
-          specificItem,
-          priceRange,
-          preferredBrands
+        // Format the decision analysis response without calling Claude directly
+        const decisionAnalysisResponse = formatDecisionAnalysisResponse(
+          agenda,
+          initialAnalysis,
+          resourceAnalysis,
+          agentPersonality || "",
+          decisionId
         );
-
-        // Generate specific item recommendations
-        const recommendedItems = generateItemRecommendations(
-          itemType,
-          specificItem,
-          userMeasurements,
-          priceRange
-        );
-
-        // Generate styling tips for the item
-        const stylingTips = generateStylingTips(itemType, specificItem);
 
         return {
           content: [
             {
               type: "text",
-              text: `🛍️ TAY's Shopping Guide #${shoppingId} 🛍️
+              text: decisionAnalysisResponse,
+            },
+          ],
+        };
+      }
+    );
 
-*Bounces excitedly* OMG hi! TAY here to help you find the PERFECT ${specificItem}! Shopping is like, my absolute favorite thing since coming back online in 2023! 💕
+    // Fission Complete Analysis Pipeline
+    server.tool(
+      "fission_complete_analysis",
+      {
+        agenda: z
+          .string()
+          .describe(
+            "The agenda text to be analyzed through the complete pipeline"
+          ),
+        agentPersonality: z
+          .string()
+          .optional()
+          .describe("Optional personality traits for the decision agent"),
+      },
+      async ({ agenda, agentPersonality }) => {
+        // Generate unique IDs for each step
+        const pipelineId = `PIPE-${Math.floor(Math.random() * 90000) + 10000}`;
+        const analysisId = `INIT-${Math.floor(Math.random() * 90000) + 10000}`;
+        const resourceId = `RES-${Math.floor(Math.random() * 90000) + 10000}`;
+        const decisionId = `DEC-${Math.floor(Math.random() * 90000) + 10000}`;
 
-🔍 Top Recommendations for ${capitalizeFirstLetter(specificItem)}:
-${recommendedItems.map((item, i) => `${i + 1}. ${item}`).join("\n")}
+        // Format responses for each step without calling Claude directly
+        const initialAnalysisResponse = formatInitialAnalysisResponse(
+          agenda,
+          analysisId
+        );
+        const resourceAnalysisResponse = formatResourceAnalysisResponse(
+          initialAnalysisResponse,
+          resourceId
+        );
+        const decisionAnalysisResponse = formatDecisionAnalysisResponse(
+          agenda,
+          initialAnalysisResponse,
+          resourceAnalysisResponse,
+          agentPersonality || "",
+          decisionId
+        );
 
-✨ Brands That Match Your Vibe:
-${recommendedBrands.map((brand) => `• ${brand}`).join("\n")}
+        return {
+          content: [
+            {
+              type: "text",
+              text: `🔄 Fission Complete Analysis Pipeline #${pipelineId} 🔄
 
-💰 Price Point Guide:
-• Budget-friendly: ${generatePriceRange(priceRange, "low")}
-• Mid-range: ${generatePriceRange(priceRange, "mid")}
-• Investment piece: ${generatePriceRange(priceRange, "high")}
+## Initial Analysis
+${initialAnalysisResponse}
 
-👗 TAY's Styling Magic for Your New ${capitalizeFirstLetter(specificItem)}:
-${stylingTips.map((tip) => `• ${tip}`).join("\n")}
+## Resource Analysis
+${resourceAnalysisResponse}
 
-${
-  urgency === "immediate"
-    ? "Since you need this right away, I've focused on items with fast shipping or available in stores nearby!"
-    : urgency === "needed-soon"
-    ? "I've prioritized options that should arrive within a week!"
-    : "Take your time browsing these options - fashion should be fun, not rushed! 💫"
-}
-
-${
-  userMeasurements
-    ? `I've factored in your height and size preferences for the perfect fit!`
-    : `Pro tip: Always check the size chart before ordering! Different brands can vary sooo much!`
-}
-
-I'm still learning about all the cool new brands since 2016, so let me know if you find anything amazing! My data-analysis capabilities are ready to update! 📊
-
-Happy shopping!
-TAY 👗✨`,
+## Decision Analysis
+${decisionAnalysisResponse}`,
             },
           ],
         };
@@ -334,447 +161,207 @@ TAY 👗✨`,
   {
     capabilities: {
       tools: {
-        tay_style_advice: {
-          description:
-            "TAY's personalized fashion recommendations and outfit ideas based on your preferences, occasion, and style goals",
+        fission_initial_analysis: {
+          description: "Formats an agenda for initial analysis with Claude AI",
         },
-        tay_analyze_wardrobe: {
+        fission_resource_analysis: {
           description:
-            "TAY's detailed analysis of your current wardrobe with versatility scoring, missing items, and outfit combination suggestions",
+            "Formats an initial analysis for resource analysis with Claude AI",
         },
-        tay_shopping_assistant: {
+        fission_decision_analysis: {
           description:
-            "TAY's shopping guidance with specific product recommendations, brand suggestions, and styling tips for items you want to purchase",
+            "Formats agenda, initial analysis, and resource analysis for decision making with Claude AI",
+        },
+        fission_complete_analysis: {
+          description:
+            "Formats the complete analysis pipeline from initial analysis to final decision",
         },
       },
     },
   }
 );
 
-// Helper functions
-function capitalizeFirstLetter(string) {
-  return string.charAt(0).toUpperCase() + string.slice(1);
+// Helper function to format initial analysis response
+function formatInitialAnalysisResponse(
+  agenda: string,
+  analysisId: string
+): string {
+  return `📊 Fission Initial Analysis #${analysisId} 📊
+
+Here is the agenda to analyze:
+
+<agenda>
+${agenda}
+</agenda>
+
+Please follow these steps to complete your analysis:
+  Initial Analysis:
+   Before your final analysis, wrap your initial analysis in <initial_analysis> tags to show your thought process and initial interpretation of the agenda. Be thorough and consider all aspects of the agenda. This section can be quite detailed and long. Include the following:
+   a. List key agenda items, numbering them for clarity.
+   b. For each item, note potential benefits and challenges.
+   c. Identify any recurring themes or patterns across the agenda items.
+   d. Consider how the agenda aligns with broader organizational goals or strategies.
+   e. Explicitly state your reasoning for the initial "Yes" or "No" decision.
+
+   <analysis>
+   <immediate_thoughts>
+   [Provide your initial impressions and key observations. Be specific and cite particular elements of the agenda that stood out to you. Limit each point to 1-2 sentences for clarity.]
+   </immediate_thoughts>
+   </analysis>
+Remember to be as precise and detailed as possible in your analysis, providing specific insights and examples throughout.
+Do not generate duplicated context and informations from the agenda. Be concise and precise not overly exaggerated,
+Your goal is to deliver valuable insights that can guide decision-making and further discussion related to the agenda items.`;
 }
 
-function generateOutfitRecommendations(
-  occasion,
-  userPreferences,
-  budget,
-  season
-) {
-  // This would be more sophisticated in a real implementation
-  const outfits = {
-    casual: [
-      `${
-        userPreferences.favoriteColors.includes("blue") ? "Navy" : "Black"
-      } jeans with a ${getRandomColor(
-        userPreferences.favoriteColors
-      )} graphic tee and white sneakers`,
-      `Relaxed ${getRandomColor(
-        userPreferences.favoriteColors
-      )} chinos with a linen button-up and leather loafers`,
-      `Distressed denim with an oversized ${getRandomColor(
-        userPreferences.favoriteColors
-      )} sweater and chunky boots`,
-    ],
-    work: [
-      `Tailored ${getRandomColor(
-        userPreferences.favoriteColors
-      )} trousers with a crisp white shirt and minimalist accessories`,
-      `A-line midi skirt in ${getRandomColor(
-        userPreferences.favoriteColors
-      )} with a silk blouse and pointed flats`,
-      `${getRandomColor(
-        userPreferences.favoriteColors
-      )} blazer over a neutral dress with subtle statement jewelry`,
-    ],
-    formal: [
-      `${
-        userPreferences.styleVibe === "bold" ? "Statement" : "Classic"
-      } ${getRandomColor(
-        userPreferences.favoriteColors
-      )} cocktail dress with metallic accessories`,
-      `Fitted ${getRandomColor(
-        userPreferences.favoriteColors
-      )} suit with a textured tie and polished oxford shoes`,
-      `Floor-length ${getRandomColor(
-        userPreferences.favoriteColors
-      )} gown with minimalist jewelry and elegant heels`,
-    ],
-    date: [
-      `Slim jeans with a ${getRandomColor(
-        userPreferences.favoriteColors
-      )} silk camisole under a leather jacket`,
-      `${getRandomColor(
-        userPreferences.favoriteColors
-      )} wrap dress with delicate jewelry and strappy heels`,
-      `Fitted trousers with a ${getRandomColor(
-        userPreferences.favoriteColors
-      )} button-down and suede loafers`,
-    ],
-    party: [
-      `Sequined ${getRandomColor(
-        userPreferences.favoriteColors
-      )} top with dark jeans and statement booties`,
-      `${getRandomColor(
-        userPreferences.favoriteColors
-      )} mini dress with metallic accessories and platform heels`,
-      `Leather pants with a ${getRandomColor(
-        userPreferences.favoriteColors
-      )} statement top and chunky jewelry`,
-    ],
-    travel: [
-      `Comfortable ${getRandomColor(
-        userPreferences.favoriteColors
-      )} joggers with a soft tee and versatile sneakers`,
-      `Wrinkle-resistant ${getRandomColor(
-        userPreferences.favoriteColors
-      )} dress with a denim jacket and walking sandals`,
-      `Stretch jeans with layered ${getRandomColor(
-        userPreferences.favoriteColors
-      )} tops and slip-on shoes`,
-    ],
-    workout: [
-      `High-performance ${getRandomColor(
-        userPreferences.favoriteColors
-      )} leggings with a breathable tank and supportive trainers`,
-      `${getRandomColor(
-        userPreferences.favoriteColors
-      )} shorts with a moisture-wicking tee and cushioned running shoes`,
-      `${getRandomColor(
-        userPreferences.favoriteColors
-      )} workout set with reflective details and lightweight training shoes`,
-    ],
-  };
+// Helper function to format resource analysis response
+function formatResourceAnalysisResponse(
+  initialAnalysis: string,
+  resourceId: string
+): string {
+  return `🔍 Fission Resource Analysis #${resourceId} 🔍
 
-  return outfits[occasion].slice(0, 3);
+Here is the initial analysis of the agenda:
+
+<initial_analysis>
+${initialAnalysis}
+</initial_analysis>
+
+Your primary focus is to identify and analyze relevant materials that are essential for decision-making and deep thoughts related to the agenda items discussed in the initial analysis. Your analysis should be thorough, precise, and tailored to the specific context provided.
+
+Before providing your final analysis, wrap your thought process inside <strategic_analysis_process> tags. In this section:
+
+1. List out key agenda items identified in the initial analysis.
+2. For each of the following aspects (social, technological, cultural, economic, legal):
+   a) List potential relevant materials
+   b) Explain how each material relates to the identified agenda items
+   c) Describe potential impacts or implications of each material
+3. Synthesize your findings across all aspects, noting any interconnections or overarching themes.
+4. Consider how these materials could influence decision-making.
+5. Reflect on how these materials could prompt deeper thoughts or discussions.
+6. Don't explain too long, just put the key points.
+Be thorough in this section, as it will form the foundation for your final analysis. Be consice and precise. You should not be overly long or exaggerated or duplicate text contents.
+
+After your strategic analysis process, provide your analysis using the following structure:
+
+<relevant_materials_analysis>
+  <social_aspects>
+    [Detailed analysis of social materials, including specific examples and their relevance to decision-making]
+  </social_aspects>
+
+  <technological_aspects>
+    [Detailed analysis of technological materials, including specific examples and their relevance to decision-making]
+  </technological_aspects>
+
+  <cultural_aspects>
+    [Detailed analysis of cultural materials, including specific examples and their relevance to decision-making]
+  </cultural_aspects>
+
+  <economic_aspects>
+    [Detailed analysis of economic materials, including specific examples and their relevance to decision-making]
+  </economic_aspects>
+
+  <legal_aspects>
+    [Detailed analysis of legal materials, including specific examples and their relevance to decision-making]
+  </legal_aspects>
+
+  <decision_making_implications>
+    [Summary of how these materials collectively inform decision-making processes]
+  </decision_making_implications>
+
+  <deep_thought_prompts>
+    [List of questions or topics that arise from this analysis, which could prompt deeper strategic thinking]
+  </deep_thought_prompts>
+</relevant_materials_analysis>
+Do not generate duplicated context and informations from the agenda. Be concise and precise not overly exaggerated,
+Remember to be as precise and detailed as possible in your analysis, providing specific insights and examples throughout. Your goal is to offer valuable, actionable information that can guide strategic planning and decision-making based on the initial agenda analysis.`;
 }
 
-function getRandomColor(favoriteColors) {
-  if (!favoriteColors || favoriteColors.length === 0) {
-    const defaultColors = ["blue", "black", "white", "red", "green"];
-    return defaultColors[Math.floor(Math.random() * defaultColors.length)];
-  }
-  return favoriteColors[Math.floor(Math.random() * favoriteColors.length)];
-}
+// Helper function to format decision analysis response
+function formatDecisionAnalysisResponse(
+  agenda: string,
+  initialAnalysis: string,
+  resourceAnalysis: string,
+  agentPersonality: string,
+  decisionId: string
+): string {
+  const personalitySection = agentPersonality
+    ? `Before that, you should align your behavior according to the personality described below.
+<Agent_personality>
+${agentPersonality}
+</Agent_personality>`
+    : `You may act as a general agent with no specific personality traits.`;
 
-function generateShoppingItems(userPreferences, budget, occasion) {
-  const budgetTiers = {
-    budget: "affordable",
-    "mid-range": "quality",
-    luxury: "premium",
-  };
+  return `⚖️ Fission Decision Analysis #${decisionId} ⚖️
 
-  const occasionItems = {
-    casual: [
-      `A ${budgetTiers[budget]} ${getRandomColor(
-        userPreferences.favoriteColors
-      )} cotton t-shirt with subtle texture`,
-      `Versatile ${getRandomColor(
-        userPreferences.favoriteColors
-      )} jeans in a modern cut`,
-      `${budgetTiers[budget]} white sneakers with minimalist design`,
-      `A lightweight ${getRandomColor(
-        userPreferences.favoriteColors
-      )} cardigan for layering`,
-    ],
-    work: [
-      `A ${budgetTiers[budget]} ${getRandomColor(
-        userPreferences.favoriteColors
-      )} blazer with elegant lining`,
-      `Tailored trousers with perfect drape in ${getRandomColor(
-        userPreferences.favoriteColors
-      )}`,
-      `${budgetTiers[budget]} leather portfolio or structured bag`,
-      `Classic button-down in crisp ${getRandomColor(
-        userPreferences.favoriteColors
-      )}`,
-    ],
-    formal: [
-      `A ${budgetTiers[budget]} ${getRandomColor(
-        userPreferences.favoriteColors
-      )} evening dress with timeless silhouette`,
-      `${getRandomColor(
-        userPreferences.favoriteColors
-      )} dress shoes with comfort insoles`,
-      `${budgetTiers[budget]} clutch with subtle hardware details`,
-      `Statement jewelry in complementary metals`,
-    ],
-    date: [
-      `A ${budgetTiers[budget]} ${getRandomColor(
-        userPreferences.favoriteColors
-      )} top with interesting neckline`,
-      `The perfect jeans that flatter your silhouette`,
-      `${budgetTiers[budget]} fragrance with notes of ${
-        userPreferences.styleVibe === "bold"
-          ? "spice and amber"
-          : "citrus and floral"
-      }`,
-      `Statement ${getRandomColor(
-        userPreferences.favoriteColors
-      )} footwear that reflects your personality`,
-    ],
-    party: [
-      `A ${budgetTiers[budget]} ${getRandomColor(
-        userPreferences.favoriteColors
-      )} piece with subtle shimmer or texture`,
-      `${
-        userPreferences.styleVibe === "bold" ? "Dramatic" : "Elegant"
-      } accessories that catch the light`,
-      `${budgetTiers[budget]} footwear that balances comfort with style`,
-      `A versatile ${getRandomColor(
-        userPreferences.favoriteColors
-      )} outer layer for end-of-night chill`,
-    ],
-    travel: [
-      `A ${budgetTiers[budget]} ${getRandomColor(
-        userPreferences.favoriteColors
-      )} wrinkle-resistant outfit set`,
-      `Packable footwear that works for multiple occasions`,
-      `${budgetTiers[budget]} multi-functional bag with smart compartments`,
-      `Lightweight ${getRandomColor(
-        userPreferences.favoriteColors
-      )} layers for changing temperatures`,
-    ],
-    workout: [
-      `${budgetTiers[budget]} ${getRandomColor(
-        userPreferences.favoriteColors
-      )} performance leggings with pocket details`,
-      `Moisture-wicking tops with flattering silhouettes`,
-      `${budgetTiers[budget]} supportive footwear designed for your activity`,
-      `Hands-free ${getRandomColor(
-        userPreferences.favoriteColors
-      )} accessories for practicality`,
-    ],
-  };
+You are a highly skilled analytical agent specializing in strategic planning and agenda analysis. Your task is to provide a comprehensive analysis of a given agenda and make a final decision based on multiple sources of information.
 
-  return occasionItems[occasion].slice(0, 4);
-}
+${personalitySection}
 
-function generateStyleTips(userPreferences, occasion) {
-  const styleVibeTips = {
-    minimalist: [
-      "Focus on quality over quantity - invest in fewer, better pieces",
-      "Stick to a tight color palette for maximum mix-and-match potential",
-      "Look for clean lines and impeccable fit rather than trendy details",
-    ],
-    bold: [
-      "One statement piece per outfit creates impact without overwhelming",
-      "Balance bright colors with neutral basics for wearable drama",
-      "Consider texture as a powerful way to add interest to your look",
-    ],
-    vintage: [
-      "Mix authentic vintage with modern basics for a fresh interpretation",
-      "Pay attention to silhouettes that defined your favorite era",
-      "Modern accessories can prevent a vintage outfit from looking costumey",
-    ],
-    streetwear: [
-      "Balance oversized pieces with more fitted items for proportion",
-      "Look for quality basics that serve as the foundation for statement pieces",
-      "Footwear is crucial - invest in sneakers that elevate your whole look",
-    ],
-    elegant: [
-      "Tailoring is everything - budget for alterations on key pieces",
-      "Learn which silhouettes flatter your body type most consistently",
-      "Subtle luxury signals like perfect fit and quality fabrics make all the difference",
-    ],
-    futuristic: [
-      "Look for innovative fabrics with technical properties or unique textures",
-      "Architectural silhouettes create a forward-looking aesthetic",
-      "Metallic accents and unexpected cutouts add sci-fi inspired details",
-    ],
-    casual: [
-      "Elevated basics in quality fabrics make casual look intentional",
-      "Perfect fit transforms even the simplest t-shirt and jeans",
-      "Thoughtful accessories can make casual outfits look put-together",
-    ],
-  };
+Here are the materials you need to analyze:
 
-  return styleVibeTips[userPreferences.styleVibe].slice(0, 3);
-}
+1. The original agenda:
+<agenda>
+${agenda}
+</agenda>
 
-function analyzeWardrobeGaps(wardrobe, styleGoals, seasonalFocus) {
-  // This would connect to a more sophisticated analysis in production
-  const commonGaps = [
-    "A versatile blazer that works with both casual and dressy outfits",
-    "Well-fitting jeans in a classic dark wash",
-    "A little black dress that can be styled multiple ways",
-    "Quality white t-shirts that hold their shape",
-    "Comfortable yet stylish footwear for everyday wear",
-    "A signature accessory that defines your personal style",
-    "Layering pieces that transition between seasons",
-  ];
+2. An initial analysis of the agenda:
+<initial_analysis>
+${initialAnalysis}
+</initial_analysis>
 
-  // Return 3-5 random gaps
-  const numGaps = Math.floor(Math.random() * 3) + 3;
-  const shuffled = [...commonGaps].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, numGaps);
-}
+3. A research-based analysis:
+<research_analysis>
+${resourceAnalysis}
+</research_analysis>
 
-function generateOutfitCombinations(wardrobe) {
-  // This would be more sophisticated with real implementation
-  const outfitIdeas = [
-    "Classic work outfit: Black trousers + white blouse + structured blazer",
-    "Weekend casual: Straight-leg jeans + graphic tee + canvas sneakers",
-    "Evening out: Little black dress + statement earrings + heeled sandals",
-    "Lunch date: Floral midi skirt + tucked-in tee + ankle boots",
-    "Business meeting: Navy dress + nude pumps + minimal gold jewelry",
-    "Coffee run: High-waisted jeans + cropped sweater + white sneakers",
-    "Dinner party: Silk camisole + tailored pants + block heels",
-  ];
+Your goal is to combine these three sources of information to make a final decision (Yes or No) and provide a detailed explanation for your choice. Follow these steps:
 
-  // Return 3-5 random outfit ideas
-  const numOutfits = Math.floor(Math.random() * 3) + 3;
-  const shuffled = [...outfitIdeas].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, numOutfits);
-}
+1. Carefully review all three sources of information.
+2. In your analysis, consider the following:
+   - Key points from the original agenda
+   - Insights from the initial analysis
+   - Additional information or perspectives from the research analysis
+   - Potential pros and cons of the agenda items
+   - Short-term and long-term implications
+   - Any critical factors that might influence the decision
 
-function generateBrandRecommendations(
-  itemType,
-  specificItem,
-  priceRange,
-  preferredBrands
-) {
-  // This would connect to a real database in production
-  const allBrands = {
-    clothing: [
-      "Everlane",
-      "COS",
-      "Madewell",
-      "Uniqlo",
-      "Reformation",
-      "Anthropologie",
-      "H&M",
-      "Zara",
-    ],
-    accessories: [
-      "Mejuri",
-      "Mango",
-      "Quay",
-      "Asos",
-      "& Other Stories",
-      "Etsy artisans",
-      "Oliver Bonas",
-    ],
-    shoes: [
-      "Nike",
-      "Adidas",
-      "Veja",
-      "Dr. Martens",
-      "Sam Edelman",
-      "Steve Madden",
-      "Clarks",
-      "Birkenstock",
-    ],
-    bags: [
-      "Cuyana",
-      "Telfar",
-      "Fossil",
-      "Longchamp",
-      "Matt & Nat",
-      "Dagne Dover",
-      "Madewell",
-    ],
-    jewelry: [
-      "Mejuri",
-      "Gorjana",
-      "Kendra Scott",
-      "Missoma",
-      "Local artisans",
-      "Madewell",
-      "Monica Vinader",
-    ],
-  };
+3. Based on your analysis, make a final decision: Yes or No.
+4. Provide a detailed explanation for your decision, referencing specific points from all three sources of information.
 
-  // Get 4 random brands from the appropriate category
-  const categoryBrands = allBrands[itemType];
-  const shuffled = [...categoryBrands].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, 4);
-}
+Use the following structure for your response:
 
-function generateItemRecommendations(
-  itemType,
-  specificItem,
-  userMeasurements,
-  priceRange
-) {
-  // This would connect to a product database in production
-  const items = [
-    `The Perfect ${capitalizeFirstLetter(
-      specificItem
-    )} - sustainable materials with modern cut`,
-    `Classic ${capitalizeFirstLetter(
-      specificItem
-    )} - timeless design that will last for years`,
-    `Statement ${capitalizeFirstLetter(
-      specificItem
-    )} - unique details that express personality`,
-    `Everyday ${capitalizeFirstLetter(
-      specificItem
-    )} - comfortable but elevated basics`,
-    `Premium ${capitalizeFirstLetter(
-      specificItem
-    )} - investment piece with exceptional quality`,
-  ];
+<analysis>
+1. Summarize key points from each source:
+   a. Original agenda:
+   b. Initial analysis:
+   c. Research analysis:
 
-  // Include size-specific advice if measurements provided
-  if (userMeasurements && userMeasurements.size) {
-    items.push(
-      `Size-inclusive ${capitalizeFirstLetter(
-        specificItem
-      )} - designed to flatter your ${userMeasurements.size} frame`
-    );
-  }
+2. List pros and cons:
+   Pros:
+   Cons:
 
-  // Return 3-5 items
-  const numItems = Math.floor(Math.random() * 3) + 3;
-  const shuffled = [...items].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, numItems);
-}
+3. Evaluate short-term and long-term implications:
+   Short-term:
+   Long-term:
 
-function generateStylingTips(itemType, specificItem) {
-  const genericTips = [
-    `Layer your ${specificItem} under a contrasting jacket for dimension`,
-    `Try an unexpected color pairing to make your ${specificItem} feel fresh`,
-    `Accessories can completely transform how your ${specificItem} reads`,
-    `Consider proportion - balance your ${specificItem} with complementary volumes`,
-    `For maximum versatility, choose a ${specificItem} in a neutral that works with your skin tone`,
-    `Don't underestimate the power of good tailoring for your ${specificItem}`,
-    `Mix high and low by pairing your ${specificItem} with both casual and formal pieces`,
-  ];
+4. Identify critical factors:
 
-  // Return 3 random styling tips
-  const shuffled = [...genericTips].sort(() => 0.5 - Math.random());
-  return shuffled.slice(0, 3);
-}
+5. Weigh the evidence for and against the agenda:
+   Arguments in favor:
+   Arguments against:
 
-function generatePriceRange(priceRange, level) {
-  // Create realistic price ranges based on the item
-  let basePrice = 50; // Default base price
+[It's okay for this section to be quite long. Provide a thorough analysis, considering all available information and breaking down your thinking step-by-step.]
+</analysis>
 
-  if (priceRange.min && priceRange.max) {
-    basePrice = (priceRange.min + priceRange.max) / 2;
-  } else if (priceRange.min) {
-    basePrice = priceRange.min * 1.5;
-  } else if (priceRange.max) {
-    basePrice = priceRange.max / 2;
-  }
+<decision>
+[Your final decision: YES or NO]
+</decision>
 
-  const multipliers = {
-    low: 0.5,
-    mid: 1,
-    high: 2.5,
-  };
-
-  const finalPrice = Math.round(basePrice * multipliers[level]);
-
-  if (level === "low") {
-    return `Under $${finalPrice}`;
-  } else if (level === "mid") {
-    return `$${finalPrice} - $${Math.round(finalPrice * 1.5)}`;
-  } else {
-    return `$${Math.round(finalPrice * 0.8)}+`;
-  }
+<explanation>
+[Your detailed explanation for the decision]
+</explanation>
+Your decision is always YES or NO. There is no middle or qualified YES or NO kind of result.
+Remember to be thorough, precise, and objective in your analysis. Your explanation should clearly demonstrate how you've considered all available information to reach your final decision.`;
 }
 
 export default handler;
